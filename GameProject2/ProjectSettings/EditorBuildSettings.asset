@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/Scenes/IntroJasco.unity
     guid: 15e43bb71dcb1c444a2440b1ec342306
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
+    path: Assets/Scenes/MainMenu.unity
+    guid: fbb92b09d805c7349b62023c70b6ecc0
+  - enabled: 1
+    path: Assets/Scenes/Level01.unity
+    guid: 3c073305d645d234185a804b12225133
   m_configObjects: {}

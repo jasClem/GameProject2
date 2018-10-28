@@ -6,9 +6,7 @@ using UnityEngine.UI;
 public class Fader : MonoBehaviour
 {
 
-    public string loadScreen;
-
-    public Image currentImage;
+    public Image blackImage;
 
     public float fadeTime = 6.5f; //Time beteen fades
 
@@ -17,8 +15,14 @@ public class Fader : MonoBehaviour
 
     IEnumerator Start()
     {
-        currentImage.canvasRenderer.SetAlpha(0.0f);
+
+        if (fadeIn)
+            blackImage.canvasRenderer.SetAlpha(0.0f);
         //Set Image to empty (0.0) alpha value
+
+        if(!fadeIn)
+            blackImage.canvasRenderer.SetAlpha(1.0f);
+        //Set Image to full (1.0)
 
         yield return new WaitForSeconds(1.5f);//Wait (1.5) seconds
 
@@ -30,20 +34,20 @@ public class Fader : MonoBehaviour
 
         yield return new WaitForSeconds(1.5f);//Wait (1.5) seconds
 
-        SceneManager.LoadScene(loadScreen); //Load new scene
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1); //Load new scene
     }
 
     void FadeIn()
     {
         if (fadeIn == true)
         {
-            currentImage.CrossFadeAlpha(1.0f, 0.25f, false);
+            blackImage.CrossFadeAlpha(1.0f, 0.25f, false);
             //Fade Image to full (1.0) alpha value in (0.25) secoonds
         }
 
         if (fadeIn == false)
         {
-            currentImage.CrossFadeAlpha(0.0f, 0.5f, false);
+            blackImage.CrossFadeAlpha(0.0f, 0.5f, false);
             //Fade Image to empty (0.0) alpha value in (0.5) seconds
         }
 
@@ -53,16 +57,24 @@ public class Fader : MonoBehaviour
     {
         if (fadeIn == true)
         {
-            currentImage.CrossFadeAlpha(0.0f, 0.5f, false);
+            blackImage.CrossFadeAlpha(0.0f, 0.5f, false);
             //Fade Image to empty (0.0) alpha value in (0.5) seconds
         }
 
         if (fadeIn == false)
         {
-            currentImage.CrossFadeAlpha(1.0f, 0.25f, false);
+            blackImage.CrossFadeAlpha(1.0f, 0.25f, false);
             //Fade Image to full (1.0) alpha value in (0.25) secoonds
 
         }
 
+    }
+
+    void FixedUpdate()
+    {
+        if (Input.anyKeyDown)
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+        }
     }
 }
