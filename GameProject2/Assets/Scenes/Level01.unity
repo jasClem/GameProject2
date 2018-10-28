@@ -469,11 +469,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   xMargin: 5
-  yMargin: 0
+  yMargin: 2
   xSmooth: 4
   ySmooth: 2
   maxXAndY: {x: 69, y: 30}
-  minXAndY: {x: 0, y: 0}
+  minXAndY: {x: 0, y: 1}
 --- !u!20 &519420031
 Camera:
   m_ObjectHideFlags: 0
@@ -1356,6 +1356,11 @@ Prefab:
         type: 2}
       propertyPath: minHeight
       value: -4
+      objectReference: {fileID: 0}
+    - target: {fileID: 114704805787185728, guid: a1671e04588ec61429a5976ebc227bea,
+        type: 2}
+      propertyPath: jumpForce
+      value: 10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a1671e04588ec61429a5976ebc227bea, type: 2}
