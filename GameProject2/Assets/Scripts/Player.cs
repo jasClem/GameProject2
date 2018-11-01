@@ -4,28 +4,17 @@ using UnityEngine;
 
 public class Player : MonoBehaviour {
 
-    //Public Variables 
-    //(Can be changed in Unity)
+    //Various Public Variables - can be changed in unity
     public float maxSpeed = 4;
     public float jumpForce = 500;
     public float minHeight, maxHeight;
-    public float sleepyTime;
+    
     public float knockBackForce;
     public bool canMove;
-
-    //Attack Boxes
-    //public GameObject attack1Box, attack2Box, attack3Box, airAttackBox;
-    //public Sprite attack1HitFrame, attack2HitFrame, attack3HitFrame, airAttackHitFrame;
-    //public GameObject blockBox;
-
-
-    //Set Ups
-    private Rigidbody rb;
-    private Animator anim;
-    private Transform groundCheck;
-    AnimatorStateInfo currentStateInfo;
-
-    //SpriteRenderer currentSprite;
+    public bool tookDamage;
+    public bool knockedDown;
+    public float stunTime;
+    public float knockDownTime;
 
     //Integers
     static int currentState;
@@ -41,7 +30,7 @@ public class Player : MonoBehaviour {
     static int damageState = Animator.StringToHash("Base Layer.playerDamage");
     static int fallState = Animator.StringToHash("Base Layer.playerFall");
     static int riseState = Animator.StringToHash("Base Layer.playerRise");
-    //static int deathState = Animator.StringToHash("Base Layer.playerDeath");
+    static int deathState = Animator.StringToHash("Base Layer.playerDeath");
 
     //Floats
     private float currentSpeed;
@@ -54,25 +43,45 @@ public class Player : MonoBehaviour {
     private bool block = false;
 
     //Strings
-    private string playerStateString = "The Player state is currently: ";
+    //for state machine
+    //private string playerStateString = "The Player state is currently: ";
+
+    //Attack Boxes
+    //public GameObject attack1Box, attack2Box, attack3Box, airAttackBox;
+    //public Sprite attack1HitFrame, attack2HitFrame, attack3HitFrame, airAttackHitFrame;
+    //public GameObject blockBox;
+
+    //Various Others
+    private Rigidbody rb;
+    private Animator anim;
+    private Transform groundCheck;
+    AnimatorStateInfo currentStateInfo;
+    //SpriteRenderer currentSprite;
 
 
-	void Start ()
+    void Start ()
     {
+
+        //Enable movement
         canMove = true;
-        //Set Ups ---------
 
-        //currentSprite = GetComponent<SpriteRenderer>();
-
+        //Get Rigidbody & Animator components
         rb = GetComponent<Rigidbody>();
         anim = GetComponent<Animator>();
-        groundCheck = gameObject.transform.Find("GroundCheck");
-        currentSpeed = maxSpeed;
-		
-	}
-	
 
-	void Update ()
+        //Get groundCheck object
+        groundCheck = gameObject.transform.Find("GroundCheck");
+
+        //Set speed to maxSpeed
+        currentSpeed = maxSpeed;
+
+
+        //currentSprite = GetComponent<SpriteRenderer>();
+        //UNUSED: For tracking sprite animations
+    }
+
+
+    void Update ()
     {
 
         //Get info on current AnimationState
@@ -83,11 +92,38 @@ public class Player : MonoBehaviour {
         onGround = Physics.Linecast(transform.position, groundCheck.position, 1 << LayerMask.NameToLayer("Ground"));
         anim.SetBool("OnGround", onGround);
 
-        //Check if player is dead
+        //Check if player is alive
         anim.SetBool("Dead", isDead);
 
-        //Display debug messages for active player movements
-        if (currentState == idleState)
+        //Set states to correct movement speeds
+        if (currentState == attack1State || currentState == attack2State || currentState == attack3State || currentState == attack1_0State)
+        {
+            //Slow movement
+            SlowSpeed();
+        }
+        else if (currentState == blockState || currentState == damageState || currentState == fallState || currentState == riseState ||
+            currentState == deathState || canMove == false)
+        {
+            //No movement
+            ZeroSpeed();
+        }
+        else
+        {
+            //Reset speed
+            ResetSpeed();
+        }
+
+        //Check for jumping
+        if (jump && onGround && ((currentState == idleState) || (currentState == walkState)))
+        {
+            //Make character jump using jumpForce
+            Vector3 jumpVector = new Vector3(0, jumpForce, 0);
+            rb.AddForce(jumpVector, ForceMode.Impulse);
+            jump = false;
+        }
+
+        //State Machine - debug display - current player state
+        /*if (currentState == idleState)
             Debug.Log(playerStateString + "Idle");
         if (currentState == walkState)
             Debug.Log(playerStateString + "Walking");
@@ -111,72 +147,15 @@ public class Player : MonoBehaviour {
             Debug.Log(playerStateString + "Starring as Michael Douglas in Falling Down");
         if (currentState == riseState)
             Debug.Log(playerStateString + "Is Standing Up");
-
-        //Speed Check
-        if (currentState == attack1State || currentState == attack2State || currentState == attack3State || currentState == attack1_0State)
-        {
-            SlowSpeed();
-        }
-        else if (currentState == blockState || currentState == damageState || canMove == false)
-        {
-            ZeroSpeed();
-        }
-        else
-        {
-            ResetSpeed();
-        }
+            */
 
 
+        //UNUSED: for hitboxes & using animation
         //if (attack1HitFrame == currentSprite.sprite)
         //attack1Box.gameObject.SetActive(true);
         //else if (!attack1HitFrame == currentSprite.sprite)
         //attack1Box.gameObject.SetActive(false);
 
-
-        //JUMPING//-----------------------------------------------------------------------//
-        if (jump && onGround && ((currentState == idleState) || (currentState == walkState)))
-        {
-            //Make character jump using jumpForce
-            Vector3 jumpVector = new Vector3(0, jumpForce, 0);
-            rb.AddForce(jumpVector, ForceMode.Impulse);
-            jump = false;
-        }
-
-        //Fall check
-        if (Input.GetKeyDown(KeyCode.E) && block != true)
-        {
-            canMove = false;
-            StartCoroutine(FallingDown());
-        }
-
-    }
-
-    //Fall check aka Chevy Chase machine
-    IEnumerator FallingDown()
-    {
-
-        float knockDownTimer = 0;
-
-        anim.Play("playerFall");
-
-        while (.02 > knockDownTimer)
-        {
-            if (facingRight == false)
-            {          
-                knockDownTimer += Time.deltaTime;
-                rb.AddForce(new Vector3(knockBackForce * 75, knockBackForce * 3, transform.position.z));
-            }
-            else if (facingRight == true)
-            {
-                knockDownTimer += Time.deltaTime;
-                rb.AddForce(new Vector3(-knockBackForce * 75, knockBackForce * 3, transform.position.z));
-            }
-        }
-        yield return new WaitForSeconds(sleepyTime / 2);
-        anim.Play("playerRise");
-
-        yield return new WaitForSeconds(sleepyTime / 2);
-        canMove = true;
     }
 
     private void FixedUpdate()
@@ -186,7 +165,7 @@ public class Player : MonoBehaviour {
         if(!isDead)
         {
             
-            //Blocking//----------------------------------------------------------------------//
+            //BLOCKING CONTROLS//----------------------------------------------------------------------//
             if (Input.GetButton("Fire2"))
             {
                 anim.SetBool("Block", true);
@@ -199,7 +178,7 @@ public class Player : MonoBehaviour {
             }
 
 
-            //MOVEMENT//----------------------------------------------------------------------//
+            //MOVEMENT CONTROLS//----------------------------------------------------------------------//
             float horizAxis = Input.GetAxis("Horizontal");
             float vertAxis = Input.GetAxis("Vertical");
 
@@ -211,8 +190,46 @@ public class Player : MonoBehaviour {
                 rb.position.y,
                 Mathf.Clamp(rb.position.z, minHeight, maxHeight));
 
+            //Direction check
+            if (horizAxis > 0 && !facingRight && canMove == true)
+            {
+                Flip();
+            }
+            else if (horizAxis < 0 && facingRight && canMove == true)
+            {
+                Flip();
+            }
 
-            //Ground Check
+
+            //Check if the player is on the ground
+            if (onGround)
+            {
+                //Set AirAttack to false
+                anim.SetBool("AirAttack", false);
+
+                //Set correct speed
+                anim.SetFloat("Speed", Mathf.Abs(rb.velocity.magnitude));
+
+            //JUMP CONTROLS//--------------------------------------------------------------------------//
+                if (Input.GetButtonDown("Jump") && 
+                    ((currentState == idleState) || (currentState == walkState)))
+                {
+                    //Set Jump trigger
+                    anim.SetTrigger("Jump");
+
+                    //Set Jump to true
+                    jump = true;
+                }
+
+            //ATTACK CONTROLS//------------------------------------------------------------------------//
+                if (Input.GetButtonDown("Fire1"))
+                {
+                    anim.SetTrigger("Attack");
+                }
+            }
+
+            
+            //Check if the player is in the air
             if (!onGround)
             {
                 vertAxis = 0;
@@ -229,48 +246,92 @@ public class Player : MonoBehaviour {
             }
 
 
-            if (onGround)
-            {
-                //Disable ground jump kicks
-                anim.SetBool("AirAttack", false);
-
-                anim.SetFloat("Speed", Mathf.Abs(rb.velocity.magnitude));
-
-                // Jumping Input & Trigger
-                if (Input.GetButtonDown("Jump") && ((currentState == idleState) || (currentState == walkState)))
-                {
-                    anim.SetTrigger("Jump");
-                    jump = true;
-                }
-
-                // Attacking Input & Trigger
-                if (Input.GetButtonDown("Fire1"))
-                {
-                    anim.SetTrigger("Attack");
-                }
-            }
-
-
-            //Sprite Flipper
-            if (horizAxis > 0 && !facingRight && canMove == true)
-            {
-                Flip();
-            }
-            else if (horizAxis < 0 && facingRight && canMove == true)
-            {
-                Flip();
-            }
-
-            //Hit check
-            if (Input.GetKeyDown(KeyCode.Q) && block != true)
-            {
-                anim.SetBool("IsHit", true);
-                anim.SetTrigger("HitDamage");
-            }
-            else
-                anim.SetBool("IsHit", false);
-
         }
+
+        //Hit check
+        if (tookDamage == true && knockedDown == false)
+        {
+            StartCoroutine(TookDamage());
+        }
+
+        //Check for falling
+        if (knockedDown == true)
+        {
+            canMove = false;
+            StartCoroutine(KnockedDown());
+        }
+    }
+
+    IEnumerator TookDamage()
+    {
+        anim.Play("playerDamage");
+        anim.SetBool("IsHit", true);
+        canMove = false;
+        //anim.SetTrigger("HitDamage");
+
+        if (facingRight == false)
+            rb.AddRelativeForce(new Vector3(knockBackForce, 2, transform.position.z));
+            if (facingRight == false)
+            rb.AddRelativeForce(new Vector3(-knockBackForce, 2, transform.position.z));
+
+        yield return new WaitForSeconds(stunTime);
+
+        anim.SetBool("IsHit", false);
+        canMove = true;
+        tookDamage = false;
+    }
+
+
+    //Fall check
+    IEnumerator KnockedDown()
+    {
+
+        /*       float knockDownTimer = 0;
+
+               //Play fall animation
+               anim.Play("playerFall");
+
+               //Knock the player back in the right direction
+
+               //Knockdown timer
+               while (.02 > knockDownTimer)
+               {
+                   if (facingRight == false)
+                   {
+                       knockDownTimer += Time.deltaTime;
+
+                       //rb.AddForce(new Vector3(knockBackForce * 75, knockBackForce * 3, transform.position.z));
+                       rb.AddRelativeForce(new Vector3(knockBackForce, 2, transform.position.z), ForceMode.Impulse);
+                   }
+                   else if (facingRight == true)
+                   {
+                       knockDownTimer += Time.deltaTime;
+
+                       //rb.AddForce(new Vector3(-knockBackForce * 75, knockBackForce * 3, transform.position.z));
+                       rb.AddRelativeForce(new Vector3(-knockBackForce, 2, transform.position.z), ForceMode.Impulse);
+                   }
+               }
+
+               //rb.AddRelativeForce(new Vector3(3, 5, 0), ForceMode.Impulse);
+
+               //Wait for fall & animation then play rising animation
+               yield return new WaitForSeconds(sleepyTime / 2);
+               anim.Play("playerRise");
+
+               //Wait for rising animation and re-enable player movement
+               yield return new WaitForSeconds(sleepyTime / 2);
+               canMove = true;
+       */
+
+        anim.Play("playerFall");
+        anim.SetBool("FallDown", true);
+        canMove = false;
+
+        yield return new WaitForSeconds(knockDownTime);
+
+        anim.SetBool("FallDown", false);
+        canMove = true;
+        knockedDown = false;
     }
 
     //Sprite Flipper
